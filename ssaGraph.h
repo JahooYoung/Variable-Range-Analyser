@@ -1,7 +1,7 @@
 #ifndef SsaGraph_H
 #define SsaGraph_H
 
-#include "VariableRangeAnalyser.h"
+#include "Utility.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -9,25 +9,27 @@
 class Operand
 {
 public:
-    enum {VAR, INT, FLOAT} type;
+    enum {VAR, NUM} type;
     std::string var;
-    int intNum;
-    double floatNum;
+    double num;
 
-    // Operand();
+    Operand();
+    Operand(const std::string &_var);
     void Print();
 };
 
 class Statement
 {
 public:
-    enum {I2F, F2I, ASN, ADD, SUB, MUL, DIV, PHI, CAL, LES, LEQ, GTR, GEQ, EQU, NEQ, NOP} type;
+    enum StType type;
     std::vector<Operand> operand;
-    Statement *next[2];
+    Interval *interval;
     bool visited;
+    Statement *next[2];
 
     Statement();
     void Print();
+    ~Statement();
 };
 
 class SsaGraph
@@ -37,6 +39,7 @@ private:
     std::string retValue;
 public:
     SsaGraph(std::string code, SymbolTable &symtab, std::vector<std::string> &parameters);
+    void Transform(SymbolTable &symtab);
     ~SsaGraph();
 };
 

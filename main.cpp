@@ -43,5 +43,8 @@ int main(int argc, char **argv)
 
     VariableRangeAnalyser *foo = func["foo"];
     foo->ExecuteWithStdio();
+
+    for (auto vra: func)
+        delete vra.second;
     return 0;
 }

@@ -1,18 +1,19 @@
 #include "VariableRangeAnalyser.h"
-#include "SsaGraph.h"
 #include <iostream>
 using namespace std;
 
 map<string, VariableRangeAnalyser*> func;
 
 VariableRangeAnalyser::VariableRangeAnalyser(string code)
+    : symtab(), parameters(), ssaGraph(code, symtab, parameters)
 {
-    SsaGraph sGraph(code, symtab, parameters);
-    cout << "symtab: " << endl;
-    // for (pair<const string, SymEntry> &i: symtab)
-    //     i.second.first += "123";
+    cout << "symtab (before): " << endl;
     for (auto i: symtab)
-        cout << i.second.first << " " << i.first << endl;
+        cout << i.second.type << " " << i.first << endl;
+    ssaGraph.Transform(symtab);
+    cout << "symtab (after): " << endl;
+    for (auto i: symtab)
+        cout << i.second.type << " " << i.first << endl;
 }
 
 void VariableRangeAnalyser::ExecuteWithStdio()

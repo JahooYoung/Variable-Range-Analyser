@@ -5,11 +5,20 @@
 #include <iostream>
 using namespace std;
 
-// Operand::Operand() {}
+Operand::Operand() {}
 
-Statement::Statement() : visited(false) 
+Operand::Operand(const string &_var)
+    : type(VAR), var(_var) {}
+
+Statement::Statement() : type(NOP), interval(NULL), visited(false)
 {
     next[0] = next[1] = NULL;
+}
+
+Statement::~Statement()
+{
+    if (interval != NULL)
+        delete interval;
 }
 
 void Operand::Print()
@@ -19,11 +28,8 @@ void Operand::Print()
     case VAR:
         cout << var << ' ';
         break;
-    case INT:
-        cout << intNum << ' ';
-        break;
-    case FLOAT:
-        cout << floatNum << ' ';
+    case NUM:
+        cout << num << ' ';
         break;
     }
 }
@@ -41,9 +47,11 @@ class TokenStream
 private:
     vector<string> tokens;
     vector<string>::iterator pt;
+    static regex symbols;
 public:
     TokenStream(string s)
     {
+        s = regex_replace(s, symbols, " $0 ");
         istringstream iss(s);
         while (iss >> s) 
             tokens.push_back(s);
@@ -51,6 +59,7 @@ public:
     }
     void Append(string s)
     {
+        s = regex_replace(s, symbols, " $0 ");
         istringstream iss(s);
         size_t p = pt - tokens.begin();
         while (iss >> s)
@@ -75,21 +84,15 @@ public:
     }
 };
 
+regex TokenStream::symbols = regex("[\\(\\)<>,;=]");
+
 Operand FetchOperand(TokenStream &tokens)
 {
     Operand operand;
     if ('0' <= tokens.Now()[0] && tokens.Now()[0] <= '9')
     {
-        if (tokens.Now().find('.') == string::npos)
-        {
-            operand.type = Operand::INT;
-            operand.intNum = stoi(tokens.Now());
-        }
-        else
-        {
-            operand.type = Operand::FLOAT;
-            operand.floatNum = stod(tokens.Now());
-        }
+        operand.type = Operand::NUM;
+        operand.num = stod(tokens.Now());
         tokens.Forward();
     }
     else
@@ -128,14 +131,14 @@ Statement* ParseIf(TokenStream &tokens, map<int, Statement*> &bbAddr,
     if (tokens.Now() == "<" || tokens.Now() == ">")
     {
         if (tokens.Peek(1) == "=") 
-            stm->type = tokens.Now() == "<" ? Statement::LEQ : Statement::GEQ;
+            stm->type = tokens.Now() == "<" ? LEQ : GEQ;
         else
-            stm->type = tokens.Now() == "<" ? Statement::LES : Statement::GTR;
+            stm->type = tokens.Now() == "<" ? LES : GTR;
     }
     else if (tokens.Now() == "!")
-        stm->type = Statement::NEQ;
+        stm->type = NEQ;
     else 
-        stm->type = Statement::EQU;
+        stm->type = EQU;
     if (tokens.Peek(1) == "=")
         tokens.Forward(2);
     else
@@ -175,15 +178,15 @@ Statement* ParseAssignment(TokenStream &tokens, SymbolTable &symtab)
         string var = stm->operand[0].var;
         if (!symtab.count(var)) 
         {
-            string type = symtab[regex_replace(var, regex("^(\\w+)_\\d+$"), "$1")].first;
-            symtab[var] = SymEntry(type, NULL);
+            SymEntry::Type type = symtab[regex_replace(var, regex("^(\\w+)_\\d+$"), "$1")].type;
+            symtab[var] = SymEntry(type);
         }
         for (tokens.Forward(2); tokens.Now() != ">"; )
         {
             tokens.Forward();
             stm->operand.push_back(FetchOperand(tokens));
         }
-        stm->type = Statement::PHI;
+        stm->type = PHI;
         return stm;
     }
     else
@@ -192,17 +195,17 @@ Statement* ParseAssignment(TokenStream &tokens, SymbolTable &symtab)
         string var = stm->operand[0].var;
         if (!symtab.count(var)) 
         {
-            string type = symtab[regex_replace(var, regex("^(\\w+)_\\d+$"), "$1")].first;
-            symtab[var] = SymEntry(type, NULL);
+            SymEntry::Type type = symtab[regex_replace(var, regex("^(\\w+)_\\d+$"), "$1")].type;
+            symtab[var] = SymEntry(type);
         }
         tokens.Forward();
         if (tokens.Now() == "(")
         {
             tokens.Forward();
             if (tokens.Now() == "int")
-                stm->type = Statement::F2I;
+                stm->type = F2I;
             else
-                stm->type = Statement::I2F;
+                stm->type = I2F;
             tokens.Forward(2);
             stm->operand.push_back(FetchOperand(tokens));
             return stm;
@@ -211,12 +214,12 @@ Statement* ParseAssignment(TokenStream &tokens, SymbolTable &symtab)
             // cout << "aaa:" << tokens.Now() << endl;
         if (tokens.Now() == ";")
         {
-            stm->type = Statement::ASN;
+            stm->type = ASN;
             return stm;
         }
         if (tokens.Now() == "(")
         {
-            stm->type = Statement::CAL;
+            stm->type = CAL;
             while (tokens.Now() != ")")
             {
                 tokens.Forward();
@@ -226,13 +229,13 @@ Statement* ParseAssignment(TokenStream &tokens, SymbolTable &symtab)
             return stm;
         }
         if (tokens.Now() == "+")
-            stm->type = Statement::ADD;
+            stm->type = ADD;
         else if (tokens.Now() == "-")
-            stm->type = Statement::SUB;
+            stm->type = SUB;
         else if (tokens.Now() == "*")
-            stm->type = Statement::MUL;
+            stm->type = MUL;
         else if (tokens.Now() == "/")
-            stm->type = Statement::DIV;
+            stm->type = DIV;
         tokens.Forward();
         stm->operand.push_back(FetchOperand(tokens));
         return stm;
@@ -242,7 +245,6 @@ Statement* ParseAssignment(TokenStream &tokens, SymbolTable &symtab)
 SsaGraph::SsaGraph(string code, SymbolTable &symtab, vector<string> &parameters)
 {
     istringstream lines(code);
-    regex symbols("[\\(\\)<>,;]");
     regex spaces("^\\s*\\{*\\}*$");
     map<int, Statement*> bbAddr;
     map<int, vector<Statement**> > ukBbAddr;
@@ -253,7 +255,6 @@ SsaGraph::SsaGraph(string code, SymbolTable &symtab, vector<string> &parameters)
     for (string line; getline(lines, line); )
     {
         if (regex_match(line, spaces)) continue;
-        line = regex_replace(line, symbols, " $0 ");
         // cout << line << endl;
         TokenStream tokens(line);
         Statement *stm;
@@ -262,7 +263,6 @@ SsaGraph::SsaGraph(string code, SymbolTable &symtab, vector<string> &parameters)
             for (int i = 0; i < 3; i++)
             {
                 getline(lines, line);
-                line = regex_replace(line, symbols, " $0 ");
                 tokens.Append(line);
             }
             stm = ParseIf(tokens, bbAddr, ukBbAddr);
@@ -288,7 +288,7 @@ SsaGraph::SsaGraph(string code, SymbolTable &symtab, vector<string> &parameters)
             else
             {
                 stm = new Statement();
-                stm->type = Statement::NOP;
+                stm->type = NOP;
                 if (bbAddr.count(bbId)) 
                     stm->next[0] = bbAddr[bbId];
                 else if (ukBbAddr.count(bbId))
@@ -304,7 +304,7 @@ SsaGraph::SsaGraph(string code, SymbolTable &symtab, vector<string> &parameters)
         }
         else if (tokens.Now() == "int" || tokens.Now() == "float")
         {
-            symtab[tokens.Peek(1)] = SymEntry(tokens.Now(), NULL);
+            symtab[tokens.Peek(1)] = SymEntry(tokens.Now());
             continue;
         }
         else if (!parseHead && tokens.Peek(1) == "(")
@@ -315,7 +315,7 @@ SsaGraph::SsaGraph(string code, SymbolTable &symtab, vector<string> &parameters)
             for (tokens.Forward(); tokens.Now() != ")"; tokens.Forward(2))
             {
                 tokens.Forward();
-                symtab[tokens.Peek(1)] = SymEntry(tokens.Now(), NULL);
+                symtab[tokens.Peek(1)] = SymEntry(tokens.Now());
                 parameters.push_back(tokens.Peek(1));
             }
             continue;
@@ -354,23 +354,159 @@ SsaGraph::SsaGraph(string code, SymbolTable &symtab, vector<string> &parameters)
     }
 }
 
-SsaGraph::~SsaGraph()
+vector<Statement*> Traverse(Statement *entry, string end = "")
 {
-    cout << "~SsaGraph" << endl;
     vector<Statement*> que;
+    if (entry == NULL) 
+        return que;
     que.push_back(entry);
     entry->visited = true;
     for (size_t i = 0; i < que.size(); i++)
     {
         Statement *u = que[i];
-        u->Print();
         for (int j = 0; j < 2; j++)
-            if (u->next[j] != NULL && !u->next[j]->visited)
+        {
+            Statement *v = u->next[j];
+            if (v != NULL && !v->visited && !(v->type <= CAL && v->operand[0].var == end))
             {
-                que.push_back(u->next[j]);
-                u->next[j]->visited = true;
+                que.push_back(v);
+                v->visited = true;
+            }
+        }
+    }
+    for (auto i: que)
+        i->visited = false;
+    return que;
+}
+
+void SsaGraph::Transform(SymbolTable &symtab)
+{
+    cout << "Transform:" << endl;
+    for (auto stm: Traverse(entry))
+    {
+        if (!(stm->type >= LES && stm->type <= NEQ)) 
+            continue;
+        stm->Print();
+        Interval *interval[2][2] = {NULL};
+        double delta = symtab[stm->operand[0].var].type == SymEntry::INT ? 1 : 0;
+        switch (stm->type)
+        {
+        case LES:
+            if (stm->operand[1].type == Operand::VAR)
+            {
+                interval[0][0] = new FutureInterval("", -INF, stm->operand[1].var, -delta);
+                interval[1][0] = new FutureInterval(stm->operand[0].var, delta, "", INF);
+                interval[0][1] = new FutureInterval(stm->operand[1].var, 0, "", INF);
+                interval[1][1] = new FutureInterval("", -INF, stm->operand[0].var, 0);
+            }
+            else
+            {
+                interval[0][0] = new Interval(-INF, stm->operand[1].num - delta);
+                interval[0][1] = new Interval(stm->operand[1].num, INF);
+            }
+            break;
+        case LEQ:
+            if (stm->operand[1].type == Operand::VAR)
+            {
+                interval[0][0] = new FutureInterval("", -INF, stm->operand[1].var, 0);
+                interval[1][0] = new FutureInterval(stm->operand[0].var, 0, "", INF);
+                interval[0][1] = new FutureInterval(stm->operand[1].var, delta, "", INF);
+                interval[1][1] = new FutureInterval("", -INF, stm->operand[0].var, -delta);
+            }
+            else
+            {
+                interval[0][0] = new Interval(-INF, stm->operand[1].num);
+                interval[0][1] = new Interval(stm->operand[1].num + delta, INF);
+            }
+            break;
+        case GTR:
+            if (stm->operand[1].type == Operand::VAR)
+            {
+                interval[1][0] = new FutureInterval("", -INF, stm->operand[0].var, -delta);
+                interval[0][0] = new FutureInterval(stm->operand[1].var, delta, "", INF);
+                interval[1][1] = new FutureInterval(stm->operand[0].var, 0, "", INF);
+                interval[0][1] = new FutureInterval("", -INF, stm->operand[1].var, 0);
+            }
+            else
+            {
+                interval[0][0] = new Interval(stm->operand[1].num + delta, INF);
+                interval[0][1] = new Interval(-INF, stm->operand[1].num);
+            }
+            break;
+        case GEQ:
+            if (stm->operand[1].type == Operand::VAR)
+            {
+                interval[1][0] = new FutureInterval("", -INF, stm->operand[0].var, 0);
+                interval[0][0] = new FutureInterval(stm->operand[1].var, 0, "", INF);
+                interval[1][1] = new FutureInterval(stm->operand[0].var, delta, "", INF);
+                interval[0][1] = new FutureInterval("", -INF, stm->operand[1].var, -delta);
+            }
+            else
+            {
+                interval[0][0] = new Interval(stm->operand[1].num, INF);
+                interval[0][1] = new Interval(-INF, stm->operand[1].num - delta);
+            }
+            break;
+        case EQU:
+            if (stm->operand[1].type == Operand::VAR)
+            {
+                interval[0][0] = new FutureInterval(stm->operand[1].var, 0, stm->operand[1].var, 0);
+                interval[1][0] = new FutureInterval(stm->operand[0].var, 0, stm->operand[0].var, 0);
+            }
+            else
+            {
+                interval[0][0] = new Interval(stm->operand[1].num, stm->operand[1].num);
+            }
+            break;
+        case NEQ:
+            if (stm->operand[1].type == Operand::VAR)
+            {
+                interval[0][1] = new FutureInterval(stm->operand[1].var, 0, stm->operand[1].var, 0);
+                interval[1][1] = new FutureInterval(stm->operand[0].var, 0, stm->operand[0].var, 0);
+            }
+            else
+            {
+                interval[0][1] = new Interval(stm->operand[1].num, stm->operand[1].num);
+            }
+            break;
+        default:
+            break;
+        }
+        for (int i = 0; i < 2; i++)
+            for (int j = 0; j < 2; j++)
+            {
+                if (interval[i][j] == NULL) 
+                    continue;
+                interval[i][j]->Print();
+                string var = stm->operand[i].var;
+                string newVar = var + (j == 0 ? "_t" : "_f");
+                bool changed = false;
+                for (auto stmt: Traverse(stm->next[j], var))
+                    for (auto &op: stmt->operand)
+                        if (op.type == Operand::VAR && op.var == var)
+                        {
+                            op.var = newVar;
+                            changed = true;
+                        }
+                if (!changed) continue;
+                symtab[newVar] = SymEntry(symtab[var].type);
+                Statement *newStm = new Statement();
+                newStm->type = ITS;
+                newStm->operand.push_back(newVar);
+                newStm->operand.push_back(var);
+                newStm->interval = interval[i][j];
+                newStm->next[0] = stm->next[j];
+                stm->next[j] = newStm;
             }
     }
-    for (Statement *i: que)
-        delete i;
+}
+
+SsaGraph::~SsaGraph()
+{
+    cout << "~SsaGraph:" << endl;
+    for (auto stm: Traverse(entry))
+    {
+        stm->Print();
+        delete stm;
+    }
 }
