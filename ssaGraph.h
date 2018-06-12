@@ -39,7 +39,7 @@ private:
     std::string retValue;
 public:
     SsaGraph(std::string code, SymbolTable &symtab, std::vector<std::string> &parameters);
-    vector<Statement*> Traverse(Statement *start = entry, string end = "") const;
+    vector<Statement*> Traverse(Statement *start = this->entry, string end = "") const;
     void Transform(SymbolTable &symtab);
     ~SsaGraph();
 };

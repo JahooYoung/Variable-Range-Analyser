@@ -357,10 +357,10 @@ SsaGraph::SsaGraph(string code, SymbolTable &symtab, vector<string> &parameters)
 vector<Statement*> SsaGraph::Traverse(Statement *start, string end) const
 {
     vector<Statement*> que;
-    if (entry == NULL) 
+    if (start == NULL) 
         return que;
-    que.push_back(entry);
-    entry->visited = true;
+    que.push_back(start);
+    start->visited = true;
     for (size_t i = 0; i < que.size(); i++)
     {
         Statement *u = que[i];

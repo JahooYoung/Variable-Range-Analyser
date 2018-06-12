@@ -7,7 +7,7 @@
 #include <map>
 #include <cmath>
 
-enum StType {I2F, F2I, ASN, ADD, SUB, MUL, DIV, PHI, ITS, CAL, LES, LEQ, GTR, GEQ, EQU, NEQ, NOP};
+enum StType {I2F, F2I, ASN, ADD, SUB, ISUB, MUL, DIV, IDIV, PHI, ITS, CAL, LES, LEQ, GTR, GEQ, EQU, NEQ, NOP};
 
 class SymEntry
 {
@@ -47,6 +47,14 @@ public:
     {
         return x < B.x;
     }
+    bool operator > (const Lattice_Z &B)
+    {
+        return x > B.x;
+    }
+    bool operator == (const Lattice_Z &B)
+    {
+        return x == B.x;
+    }
     double operator + (const Lattice_Z &B)
     {
         return x + B.x;
@@ -75,15 +83,16 @@ const double INF = INFINITY;
 
 class Interval
 {
-private:
+public:
     Lattice_Z low, high;
     bool undefined;
-public:
+
     Interval();
     Interval(const Lattice_Z &_low, const Lattice_Z &_high);
     virtual Interval* Copy();
+    virtual void ConnectToVariable(SymbolTable &symtab);
+    virtual Interval ConvertToInterval();
     virtual ~Interval();
-    bool IsUndefined();
     virtual void Print();
 };
 
@@ -91,12 +100,15 @@ class FutureInterval : public Interval
 {
 private:
     std::string varLow, varHigh;
+    Variable *nodeLow, *nodeHigh;
     Lattice_Z deltaLow, deltaHigh;
 public:
     FutureInterval();
     FutureInterval(const std::string &_varLow, const Lattice_Z &deltaLow,
                    const std::string &_varHigh, const Lattice_Z &deltaHigh);
     FutureInterval* Copy();
+    void ConnectToVariable(SymbolTable &symtab);
+    Interval ConvertToInterval();
     ~FutureInterval();
     void Print();
 };

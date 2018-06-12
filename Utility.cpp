@@ -3,14 +3,25 @@ using namespace std;
 
 #include <iostream>
 
-Interval::Interval() {}
+Interval::Interval() 
+    : undefined(true) {}
 
 Interval::Interval(const Lattice_Z &_low, const Lattice_Z &_high)
-    : low(_low), high(_high) {}
+    : low(_low), high(_high), undefined(false) {}
 
 Interval* Interval::Copy()
 {
     return new Interval(*this);
+}
+
+void Interval::ConnectToVariable(SymbolTable &symtab)
+{
+    return;
+}
+
+Interval Interval::ConvertToInterval()
+{
+    return *this;
 }
 
 Interval::~Interval() {}
@@ -29,6 +40,23 @@ FutureInterval::FutureInterval(const string &_varLow, const Lattice_Z &_deltaLow
 FutureInterval* FutureInterval::Copy()
 {
     return new FutureInterval(*this);
+}
+
+void FutureInterval::ConnectToVariable(SymbolTable &symtab)
+{ 
+    nodeLow = varLow != "" ? symtab[varLow].node : NULL;
+    nodeHigh = varHigh != "" ? symtab[varHigh].node : NULL;
+}
+
+Interval FutureInterval::ConvertToInterval()
+{
+    low = deltaLow;
+    high = deltaHigh;
+    if (nodeLow != NULL)
+        low = low + nodeLow->I.low;
+    if (nodeHigh != NULL)
+        high = high + nodeLow->I.high;
+    undefined = false;
 }
 
 FutureInterval::~FutureInterval() {}

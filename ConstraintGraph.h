@@ -25,7 +25,7 @@ public:
     std::vector<Variable*> outEdge;
     Interval I;
     bool visited;
-    int sccId; // -1
+    int sccId;
     Constraint cst;
     // for SCC Calculation
     int state, dfn, low;
