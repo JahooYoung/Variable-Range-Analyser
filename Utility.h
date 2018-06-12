@@ -36,6 +36,7 @@ class Lattice_Z
 {
 private:
     double x;
+    bool 
 public:
     Lattice_Z() : x(0) {}
     Lattice_Z(const double &y) : x(y) {}
@@ -73,6 +74,12 @@ public:
         if (B.x == 0) return 0; // ?
         return x / B.x;
     }
+    double myceil() {
+        return ceil(x);
+    }
+    double myfloor() {
+        return floor(x);
+    }
     friend std::ostream& operator << (std::ostream &out, const Lattice_Z &B)
     {
         return out << B.x;
@@ -86,14 +93,19 @@ class Interval
 public:
     Lattice_Z low, high;
     bool undefined;
+    bool empty;
 
     Interval();
+    Interval(bool _empty);
     Interval(const Lattice_Z &_low, const Lattice_Z &_high);
     virtual Interval* Copy();
     virtual void ConnectToVariable(SymbolTable &symtab);
     virtual Interval ConvertToInterval();
     virtual ~Interval();
     virtual void Print();
+
+    friend Interval calc(Interval &A, enum StType type);
+    friend Interval calc(Interval &A, Interval &B, enum StType type);
 };
 
 class FutureInterval : public Interval
