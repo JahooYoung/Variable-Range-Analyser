@@ -29,9 +29,9 @@ Interval Constraint::Evaluate()
         return var[0]->I;
     case ADD: case SUB: case MUL: case DIV:
         if (interval == NULL)
-            return calc(var[0]->I, var[1]->I);
+            return calc(var[0]->I, var[1]->I, type);
         else 
-            return calc(var[0]->I, *interval);
+            return calc(var[0]->I, *interval, type);
     case ISUB:
         return calc(*interval, SUB);
     case IDIV:
@@ -75,7 +75,8 @@ bool Variable::Update(int stage)
             I = Interval(I.low, +INF);
         break;
     case 1:
-        cst.interval->ConvertToInterval();
+        if (cst.interval != NULL)
+            cst.interval->ConvertToInterval();
         break;
     case 2:
         if (I.low == -INF && e.low > -INF) 
@@ -144,44 +145,50 @@ void ConstraintGraph::BuildCopy(NodeVec &nodes)
     
 }
 
-ConstraintGraph::ConstraintGraph(const SsaGraph &ssaGraph, SymbolTable &symtab)
+void ConstraintGraph::BuildGraph(const SsaGraph &ssaGraph, SymbolTable &symtab)
 {
+    cout << "Begin to build constraint graph" << endl;
     vector<Variable*> nodes;
     for (auto &var: symtab)
     {
         var.second.node = new Variable();
         nodes.push_back(var.second.node);
+        // varTab[var.second.node] = var.first;
     }
-    for (auto stm: ssaGraph.Traverse())
+    for (auto stm: ssaGraph.Traverse(ssaGraph.entry))
     {
         if (stm->type > CAL) 
             continue;
+        stm->Print();
         Variable *var = NULL;
         for (auto op: stm->operand)
         {
             if (var == NULL)
                 var = symtab[op.var].node;
-            else if (op.type == Operand::VAR)
+            else if (op.type == Operand::VAR && symtab.count(op.var))
             {
-                var->cst.var.push_back(symtab[op.var].node);
-                symtab[op.var].node->outEdge.push_back(var);
+                cout << op.var << endl;
+                Variable *v = symtab[op.var].node;
+                var->cst.var.push_back(v);
+                v->outEdge.push_back(var);
             }
         }
         var->cst.type = stm->type;
         var->cst.interval = stm->interval;
-        var->cst.interval->ConnectToVariable(symtab);
+        if (stm->interval != NULL)
+            var->cst.interval->ConnectToVariable(symtab);
         // I2F, F2I, ASN, ADD, SUB, MUL, DIV, PHI, ITS, CAL
         if (stm->type >= ASN && stm->type <= DIV)
         {
-            if (stm->operand[1].type == Operand::NUM)
-                var->cst.interval = new Interval(stm->operand[1].num, stm->operand[1].num);
-            else if (stm->operand[0].type == Operand::NUM)
+            if (stm->operand[2].type == Operand::NUM)
+                var->cst.interval = new Interval(stm->operand[2].num, stm->operand[2].num);
+            else if (stm->operand[1].type == Operand::NUM)
             {
                 if (stm->type == SUB) 
                     var->cst.type = ISUB;
                 else 
                     var->cst.type = IDIV;
-                var->cst.interval = new Interval(stm->operand[0].num, stm->operand[0].num);
+                var->cst.interval = new Interval(stm->operand[1].num, stm->operand[1].num);
             }
         }
         else if (stm->type == CAL) // inline
@@ -206,24 +213,29 @@ ConstraintGraph::ConstraintGraph(const SsaGraph &ssaGraph, SymbolTable &symtab)
             }
         }
     }
-    // parameters ?
+    cout << "Build constraint graph complete" << endl;
     // Calculate SCC
     int Timer = 0;
     stack<Variable*> stk;
     for (auto node: nodes)
         if (node->state == 0)
             Tarjan(node, Timer, stk);
+    cout << "Build SCC complete" << endl;
 }
 
 void ConstraintGraph::Execute()
 {
+    cout << "Begin to Execute CG" << endl;
     for (auto scc: SCC)
     {
         int sccId = scc[0]->sccId;
+        cout << "Begin to Execute SSC " << sccId
+             << ", size " << scc.size() << endl;
         for (auto node: scc)
             node->I = Interval();
         for (int stage = 0; stage < 3; stage++)
         {
+            cout << "  Stage " << stage << endl;
             queue<Variable*> que;
             for (auto node: scc)
             {
@@ -233,6 +245,7 @@ void ConstraintGraph::Execute()
             for (; !que.empty(); que.pop())
             {
                 Variable *u = que.front();
+                // cout << "    queue head: " << varTab[u] << endl;
                 if (u->Update(stage))
                     for (auto v: u->outEdge)
                         if (v->sccId == sccId && !v->visited)

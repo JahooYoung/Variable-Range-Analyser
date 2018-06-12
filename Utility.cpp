@@ -1,11 +1,12 @@
 #include "Utility.h"
+#include "ConstraintGraph.h"
 using namespace std;
 
 #include <iostream>
 
 Interval::Interval() : empty(0), undefined(true) {}
 
-Interval(bool _empty) : empty(_empty), undefined(true) {}
+Interval::Interval(bool _empty) : empty(_empty), undefined(true) {}
 
 Interval::Interval(const Lattice_Z &_low, const Lattice_Z &_high)
     : low(_low), high(_high), empty(0), undefined(true) {}
@@ -15,15 +16,9 @@ Interval* Interval::Copy()
     return new Interval(*this);
 }
 
-void Interval::ConnectToVariable(SymbolTable &symtab)
-{
-    return;
-}
+void Interval::ConnectToVariable(SymbolTable &symtab) {}
 
-Interval Interval::ConvertToInterval()
-{
-    return *this;
-}
+void Interval::ConvertToInterval() {}
 
 Interval::~Interval() {}
 
@@ -31,6 +26,10 @@ void Interval::Print()
 {
     cout << '[' << low << ',' << high << ']' << endl;
 }
+
+/**
+ * FutureInterval Block
+ */
 
 FutureInterval::FutureInterval() {}
 
@@ -49,7 +48,7 @@ void FutureInterval::ConnectToVariable(SymbolTable &symtab)
     nodeHigh = varHigh != "" ? symtab[varHigh].node : NULL;
 }
 
-Interval FutureInterval::ConvertToInterval()
+void FutureInterval::ConvertToInterval()
 {
     low = deltaLow;
     high = deltaHigh;
@@ -68,21 +67,23 @@ void FutureInterval::Print()
             ",ft(" << varHigh << ")+" << deltaHigh << "]" << endl;
 }
 
-Interval calc(Interval &A, enum StType type) {
+Interval calc(const Interval &A, enum StType type) {
     switch(type) {
         case I2F:
             return A;
         case F2I:
-            return Interval(myceil(A.low), myfloor(A.high));
+            return Interval(A.low.myceil(), A.high.myfloor());
         default:
             cerr << "error in calc func" << endl;
     }
+    return Interval();
 }
 
-Interval calc(Interval &A, Interval &B, enum StType type) {
+Interval calc(const Interval &A, const Interval &B, enum StType type) {
     if ((A.empty || B.empty) && type != PHI)
         return Interval(1);
     
+    Lattice_Z a, b, c, d;
     switch(type) {
         case ADD:
             return Interval(A.low + B.low, A.high + B.high);
@@ -91,12 +92,11 @@ Interval calc(Interval &A, Interval &B, enum StType type) {
             return Interval(A.low - B.high, A.high - B.low);
 
         case MUL:
-            Lattice_Z a, b, c, d;
             a = A.low * B.low;
             b = A.high * B.low;
             c = A.low * B.high;
             d = A.high * B.high;
-            return Interval(min(min(a, b), min(c, d))
+            return Interval(min(min(a, b), min(c, d)),
                             max(max(a, b), max(c, d)));
 
         case DIV:
@@ -118,5 +118,6 @@ Interval calc(Interval &A, Interval &B, enum StType type) {
         
         default:
             cerr << "error in calc func" << endl;
+            return Interval();
     }
 }

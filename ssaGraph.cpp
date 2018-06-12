@@ -89,7 +89,7 @@ regex TokenStream::symbols = regex("[\\(\\)<>,;=]");
 Operand FetchOperand(TokenStream &tokens)
 {
     Operand operand;
-    if ('0' <= tokens.Now()[0] && tokens.Now()[0] <= '9')
+    if (('0' <= tokens.Now()[0] && tokens.Now()[0] <= '9') || tokens.Now()[0] == '-')
     {
         operand.type = Operand::NUM;
         operand.num = stod(tokens.Now());
@@ -382,7 +382,7 @@ vector<Statement*> SsaGraph::Traverse(Statement *start, string end) const
 void SsaGraph::Transform(SymbolTable &symtab)
 {
     cout << "Transform:" << endl;
-    for (auto stm: Traverse())
+    for (auto stm: Traverse(entry))
     {
         if (!(stm->type >= LES && stm->type <= NEQ)) 
             continue;
@@ -504,7 +504,7 @@ void SsaGraph::Transform(SymbolTable &symtab)
 SsaGraph::~SsaGraph()
 {
     cout << "~SsaGraph:" << endl;
-    for (auto stm: Traverse())
+    for (auto stm: Traverse(entry))
     {
         stm->Print();
         delete stm;

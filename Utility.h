@@ -1,11 +1,13 @@
 #ifndef Utility_H
 #define Utility_H
 
-#include "ConstraintGraph.h"
+// #include "ConstraintGraph.h"
 #include <iostream>
 #include <string>
 #include <map>
 #include <cmath>
+
+class Variable;
 
 enum StType {I2F, F2I, ASN, ADD, SUB, ISUB, MUL, DIV, IDIV, PHI, ITS, CAL, LES, LEQ, GTR, GEQ, EQU, NEQ, NOP};
 
@@ -36,48 +38,57 @@ class Lattice_Z
 {
 private:
     double x;
-    bool 
 public:
     Lattice_Z() : x(0) {}
     Lattice_Z(const double &y) : x(y) {}
-    double operator = (const double &y)
+    double& operator = (const double &y)
     {
         return x = y;
     }
-    bool operator < (const Lattice_Z &B)
+    friend bool operator < (const Lattice_Z &A, const Lattice_Z &B)
     {
-        return x < B.x;
+        return A.x < B.x;
     }
-    bool operator > (const Lattice_Z &B)
+    friend bool operator > (const Lattice_Z &A, const Lattice_Z &B)
     {
-        return x > B.x;
+        return A.x > B.x;
     }
-    bool operator == (const Lattice_Z &B)
+    friend bool operator == (const Lattice_Z &A, const Lattice_Z &B)
     {
-        return x == B.x;
+        return A.x == B.x;
     }
-    double operator + (const Lattice_Z &B)
+    friend Lattice_Z operator + (const Lattice_Z &A, const Lattice_Z &B)
     {
-        return x + B.x;
+        return A.x + B.x;
     }
-    double operator - (const Lattice_Z &B)
+    friend Lattice_Z operator - (const Lattice_Z &A, const Lattice_Z &B)
     {
-        return x - B.x;
+        return A.x - B.x;
     }
-    double operator * (const Lattice_Z &B)
+    friend Lattice_Z operator * (const Lattice_Z &A, const Lattice_Z &B)
     {
-        if (x == 0 || B.x == 0) return 0; // ?
-        return x * B.x;
+        if (A.x == 0 || B.x == 0) return 0; // ?
+        return A.x * B.x;
     }
-    double operator / (const Lattice_Z &B)
+    friend Lattice_Z operator / (const Lattice_Z &A, const Lattice_Z &B)
     {
         if (B.x == 0) return 0; // ?
-        return x / B.x;
+        return A.x / B.x;
     }
-    double myceil() {
+    friend Lattice_Z min(const Lattice_Z &A, const Lattice_Z &B)
+    {
+        if (A < B) return A;
+        return B;
+    }
+    friend Lattice_Z max(const Lattice_Z &A, const Lattice_Z &B)
+    {
+        if (A > B) return A;
+        return B;
+    }
+    double myceil() const {
         return ceil(x);
     }
-    double myfloor() {
+    double myfloor() const {
         return floor(x);
     }
     friend std::ostream& operator << (std::ostream &out, const Lattice_Z &B)
@@ -100,12 +111,12 @@ public:
     Interval(const Lattice_Z &_low, const Lattice_Z &_high);
     virtual Interval* Copy();
     virtual void ConnectToVariable(SymbolTable &symtab);
-    virtual Interval ConvertToInterval();
+    virtual void ConvertToInterval();
     virtual ~Interval();
     virtual void Print();
 
-    friend Interval calc(Interval &A, enum StType type);
-    friend Interval calc(Interval &A, Interval &B, enum StType type);
+    friend Interval calc(const Interval &A, enum StType type);
+    friend Interval calc(const Interval &A, const Interval &B, enum StType type);
 };
 
 class FutureInterval : public Interval
@@ -120,7 +131,7 @@ public:
                    const std::string &_varHigh, const Lattice_Z &deltaHigh);
     FutureInterval* Copy();
     void ConnectToVariable(SymbolTable &symtab);
-    Interval ConvertToInterval();
+    void ConvertToInterval();
     ~FutureInterval();
     void Print();
 };

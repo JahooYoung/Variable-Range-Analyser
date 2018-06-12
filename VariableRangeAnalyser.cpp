@@ -15,7 +15,7 @@ VariableRangeAnalyser::VariableRangeAnalyser(string code)
     cout << "symtab (after): " << endl;
     for (auto i: symtab)
         cout << i.second.type << " " << i.first << endl;
-    constraintGraph = ConstraintGraph(ssaGraph, symtab);
+    constraintGraph.BuildGraph(ssaGraph, symtab);
 }
 
 NodeVec VariableRangeAnalyser::BuildCopy(NodeVec &nodes)

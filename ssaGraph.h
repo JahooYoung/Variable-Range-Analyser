@@ -35,11 +35,11 @@ public:
 class SsaGraph
 {
 private:
-    Statement *entry;
     std::string retValue;
 public:
+    Statement *entry;
     SsaGraph(std::string code, SymbolTable &symtab, std::vector<std::string> &parameters);
-    vector<Statement*> Traverse(Statement *start = this->entry, std::string end = "") const;
+    std::vector<Statement*> Traverse(Statement *start, std::string end = "") const;
     void Transform(SymbolTable &symtab);
     ~SsaGraph();
 };

@@ -19,4 +19,4 @@ Utility.o: Utility.cpp Utility.h ConstraintGraph.h
 
 .PHONY: clean
 clean: 
-	rm $(TARGET) $(OBJECTS)
+	-rm $(TARGET) $(OBJECTS)

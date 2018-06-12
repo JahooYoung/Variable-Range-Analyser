@@ -5,6 +5,8 @@
 #include "SsaGraph.h"
 #include <vector>
 #include <stack>
+#include <map>
+#include <string>
 
 class Constraint
 {
@@ -41,11 +43,12 @@ typedef std::vector<Variable*> NodeVec;
 class ConstraintGraph
 {
 private:
+    // std::map<Variable*, std::string> varTab; // for debug
     std::vector< std::vector<Variable*> > SCC;
     void Tarjan(Variable *start, int &Timer, std::stack<Variable*> &stk);
 public:
     ConstraintGraph();
-    ConstraintGraph(const SsaGraph &ssaGraph, SymbolTable &symtab);
+    void BuildGraph(const SsaGraph &ssaGraph, SymbolTable &symtab);
     void BuildCopy(NodeVec &nodes);
     void Execute();
     ~ConstraintGraph();
