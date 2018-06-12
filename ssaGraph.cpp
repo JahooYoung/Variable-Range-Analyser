@@ -17,8 +17,8 @@ Statement::Statement() : type(NOP), interval(NULL), visited(false)
 
 Statement::~Statement()
 {
-    if (interval != NULL)
-        delete interval;
+    // if (interval != NULL)
+    //     delete interval;
 }
 
 void Operand::Print()
@@ -354,7 +354,7 @@ SsaGraph::SsaGraph(string code, SymbolTable &symtab, vector<string> &parameters)
     }
 }
 
-vector<Statement*> Traverse(Statement *entry, string end = "")
+vector<Statement*> SsaGraph::Traverse(Statement *start, string end) const
 {
     vector<Statement*> que;
     if (entry == NULL) 
@@ -382,7 +382,7 @@ vector<Statement*> Traverse(Statement *entry, string end = "")
 void SsaGraph::Transform(SymbolTable &symtab)
 {
     cout << "Transform:" << endl;
-    for (auto stm: Traverse(entry))
+    for (auto stm: Traverse())
     {
         if (!(stm->type >= LES && stm->type <= NEQ)) 
             continue;
@@ -504,7 +504,7 @@ void SsaGraph::Transform(SymbolTable &symtab)
 SsaGraph::~SsaGraph()
 {
     cout << "~SsaGraph:" << endl;
-    for (auto stm: Traverse(entry))
+    for (auto stm: Traverse())
     {
         stm->Print();
         delete stm;

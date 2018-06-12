@@ -13,14 +13,14 @@ class SymEntry
 {
 public:
     enum Type {INT, FLOAT} type;
-    Node* node;
+    Variable* node;
 
     SymEntry() : type(INT), node(NULL) {}
 
-    SymEntry(const Type &_type, Node *_node = NULL)
+    SymEntry(const Type &_type, Variable *_node = NULL)
         : type(_type), node(_node) {}
 
-    SymEntry(const std::string &_type, Node *_node = NULL)
+    SymEntry(const std::string &_type, Variable *_node = NULL)
         : node(_node)
     {
         if (_type == "int") 
@@ -81,6 +81,7 @@ private:
 public:
     Interval();
     Interval(const Lattice_Z &_low, const Lattice_Z &_high);
+    virtual Interval* Copy();
     virtual ~Interval();
     bool IsUndefined();
     virtual void Print();
@@ -95,6 +96,7 @@ public:
     FutureInterval();
     FutureInterval(const std::string &_varLow, const Lattice_Z &deltaLow,
                    const std::string &_varHigh, const Lattice_Z &deltaHigh);
+    FutureInterval* Copy();
     ~FutureInterval();
     void Print();
 };

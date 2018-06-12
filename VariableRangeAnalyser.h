@@ -3,7 +3,6 @@
 
 #include "Utility.h"
 #include "ConstraintGraph.h"
-#include "SsaGraph.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -13,11 +12,12 @@ class VariableRangeAnalyser
 private:
     SymbolTable symtab;
     std::vector<std::string> parameters;  // The last one is the return value
-    SsaGraph ssaGraph;
+    ConstraintGraph constraintGraph;
 public:
     VariableRangeAnalyser(std::string code);
+    NodeVec BuildCopy(NodeVec &nodes);
     void ExecuteWithStdio();
-    void Execute();
+    // void Execute();
 };
 
 extern std::map<std::string, VariableRangeAnalyser*> func;
