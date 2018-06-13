@@ -31,7 +31,7 @@ int main(int argc, char **argv)
         if (regex_match(line, sm, funcDec))
         {
             if (funcSection != "")
-                func[funcName] = new VariableRangeAnalyser(funcSection);
+                func[funcName] = new VariableRangeAnalyser(funcSection, funcName);
             funcSection = "";
             funcName = sm[1];
         }
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
             funcSection += line + '\n';
     }
     if (funcSection != "")
-        func[funcName] = new VariableRangeAnalyser(funcSection);
+        func[funcName] = new VariableRangeAnalyser(funcSection, funcName);
 
     VariableRangeAnalyser *foo = func["foo"];
     foo->ExecuteWithStdio();

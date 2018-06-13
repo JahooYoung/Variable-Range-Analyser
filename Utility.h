@@ -49,9 +49,17 @@ public:
     {
         return A.x < B.x;
     }
+    friend bool operator <= (const Lattice_Z &A, const Lattice_Z &B)
+    {
+        return A.x <= B.x;
+    }
     friend bool operator > (const Lattice_Z &A, const Lattice_Z &B)
     {
         return A.x > B.x;
+    }
+    friend bool operator >= (const Lattice_Z &A, const Lattice_Z &B)
+    {
+        return A.x >= B.x;
     }
     friend bool operator == (const Lattice_Z &A, const Lattice_Z &B)
     {
@@ -86,10 +94,10 @@ public:
         return B;
     }
     double myceil() const {
-        return ceil(x);
+        return ceil(x - 1e-6);
     }
     double myfloor() const {
-        return floor(x);
+        return floor(x + 1e-6);
     }
     friend std::ostream& operator << (std::ostream &out, const Lattice_Z &B)
     {
@@ -103,17 +111,17 @@ class Interval
 {
 public:
     Lattice_Z low, high;
-    bool undefined;
     bool empty;
+    bool undefined;
 
     Interval();
     Interval(bool _empty);
     Interval(const Lattice_Z &_low, const Lattice_Z &_high);
     virtual Interval* Copy();
-    virtual void ConnectToVariable(SymbolTable &symtab);
+    virtual void ConnectToVariable(SymbolTable &symtab, Variable *node);
     virtual void ConvertToInterval();
     virtual ~Interval();
-    virtual void Print();
+    virtual void Print() const;
 
     friend Interval calc(const Interval &A, enum StType type);
     friend Interval calc(const Interval &A, const Interval &B, enum StType type);
@@ -130,10 +138,10 @@ public:
     FutureInterval(const std::string &_varLow, const Lattice_Z &deltaLow,
                    const std::string &_varHigh, const Lattice_Z &deltaHigh);
     FutureInterval* Copy();
-    void ConnectToVariable(SymbolTable &symtab);
+    void ConnectToVariable(SymbolTable &symtab, Variable *node);
     void ConvertToInterval();
     ~FutureInterval();
-    void Print();
+    void Print() const;
 };
 
 

@@ -506,7 +506,7 @@ SsaGraph::~SsaGraph()
     cout << "~SsaGraph:" << endl;
     for (auto stm: Traverse(entry))
     {
-        stm->Print();
+        // stm->Print();
         delete stm;
     }
 }

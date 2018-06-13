@@ -35,6 +35,7 @@ public:
     Variable *newNode;
 
     Variable();
+    Variable(const Variable &var);
     bool Update(int stage);
 };
 
@@ -43,14 +44,13 @@ typedef std::vector<Variable*> NodeVec;
 class ConstraintGraph
 {
 private:
-    // std::map<Variable*, std::string> varTab; // for debug
     std::vector< std::vector<Variable*> > SCC;
     void Tarjan(Variable *start, int &Timer, std::stack<Variable*> &stk);
 public:
     ConstraintGraph();
     void BuildGraph(const SsaGraph &ssaGraph, SymbolTable &symtab);
-    void BuildCopy(NodeVec &nodes);
-    void Execute();
+    void BuildCopy(NodeVec &nodes, SymbolTable &symtab, SymbolTable &_symtab, std::string funcName);
+    void Execute(std::map<Variable*, std::string> &varTab);
     ~ConstraintGraph();
 };
 

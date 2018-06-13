@@ -5,8 +5,9 @@ using namespace std;
 
 map<string, VariableRangeAnalyser*> func;
 
-VariableRangeAnalyser::VariableRangeAnalyser(string code)
+VariableRangeAnalyser::VariableRangeAnalyser(string code, string name)
 {
+    funcName = name;
     SsaGraph ssaGraph(code, symtab, parameters);
     cout << "symtab (before): " << endl;
     for (auto i: symtab)
@@ -18,9 +19,11 @@ VariableRangeAnalyser::VariableRangeAnalyser(string code)
     constraintGraph.BuildGraph(ssaGraph, symtab);
 }
 
-NodeVec VariableRangeAnalyser::BuildCopy(NodeVec &nodes)
+NodeVec VariableRangeAnalyser::BuildCopy(NodeVec &nodes, SymbolTable &_symtab)
 {
-    constraintGraph.BuildCopy(nodes);
+    cout << "start copy" << endl;
+    constraintGraph.BuildCopy(nodes, symtab, _symtab, funcName);
+    cout << "build copy ok" << endl;
     NodeVec params;
     for (auto param: parameters)
         params.push_back(symtab[param].node->newNode);
@@ -53,7 +56,9 @@ void VariableRangeAnalyser::ExecuteWithStdio()
         node->cst.type = ASN;
         node->cst.interval = new Interval(low, high);
     }
-    constraintGraph.Execute();
+    for (auto var: symtab)
+        varTab[var.second.node] = var.first;
+    constraintGraph.Execute(varTab);
     cout << retName << " in ";
     symtab[retName].node->I.Print();
     parameters.push_back(retName);
