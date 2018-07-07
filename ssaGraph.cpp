@@ -223,7 +223,7 @@ Statement* ParseAssignment(TokenStream &tokens, SymbolTable &symtab)
             while (tokens.Now() != ")")
             {
                 tokens.Forward();
-                cout << tokens.Now() << endl;
+                // cout << tokens.Now() << endl;
                 stm->operand.push_back(FetchOperand(tokens));
             }
             return stm;
@@ -337,7 +337,7 @@ SsaGraph::SsaGraph(string code, SymbolTable &symtab, vector<string> &parameters)
             lastStm = stm;
         }
         else continue;
-        stm->Print();
+        // stm->Print();
         if (entry == NULL)
             entry = stm;
         if (bbStart != -1)
@@ -381,12 +381,12 @@ vector<Statement*> SsaGraph::Traverse(Statement *start, string end) const
 
 void SsaGraph::Transform(SymbolTable &symtab)
 {
-    cout << "Transform:" << endl;
+    // cout << "Transform:" << endl;
     for (auto stm: Traverse(entry))
     {
         if (!(stm->type >= LES && stm->type <= NEQ)) 
             continue;
-        stm->Print();
+        // stm->Print();
         Interval *interval[2][2] = {NULL};
         double delta = symtab[stm->operand[0].var].type == SymEntry::INT ? 1 : 0;
         switch (stm->type)
@@ -477,7 +477,7 @@ void SsaGraph::Transform(SymbolTable &symtab)
             {
                 if (interval[i][j] == NULL) 
                     continue;
-                interval[i][j]->Print();
+                // interval[i][j]->Print();
                 string var = stm->operand[i].var;
                 string newVar = var + (j == 0 ? "_t" : "_f");
                 bool changed = false;
@@ -503,7 +503,7 @@ void SsaGraph::Transform(SymbolTable &symtab)
 
 SsaGraph::~SsaGraph()
 {
-    cout << "~SsaGraph:" << endl;
+    // cout << "~SsaGraph:" << endl;
     for (auto stm: Traverse(entry))
     {
         // stm->Print();

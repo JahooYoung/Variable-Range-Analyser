@@ -106,20 +106,22 @@ Interval calc(const Interval &A, enum StType type) {
     return Interval();
 }
 
-Interval calc(const Interval &A, const Interval &B, enum StType type) {
+Interval calc(const Interval &A, const Interval &B, enum StType type) 
+{
     if ((A.empty || B.empty) && type != PHI)
         return Interval(1);
     
     Lattice_Z a, b, c, d;
-    switch(type) {
+    switch(type) 
+    {
         case ADD:
             if (A.undefined || B.undefined) 
                 return Interval();
             return Interval(A.low + B.low, A.high + B.high);
 
         case SUB:
-            A.Print();
-            B.Print();
+            // A.Print();
+            // B.Print();
             if (A.undefined || B.undefined) 
                 return Interval();
             return Interval(A.low - B.high, A.high - B.low);

@@ -68,13 +68,13 @@ Variable::Variable()
     : visited(false), state(0) {}
 
 Variable::Variable(const Variable &var)
-    : outEdge(), I(), visited(false), cst(var.cst), state(0), newNode(NULL) {}
+    : outEdge(), cst(var.cst), I(), visited(false), state(0), newNode(NULL) {}
 
 bool Variable::Update(int stage)
 {
     Interval oldI = I, e = cst.Evaluate();
-    cout << "      e:";
-    e.Print();
+    // cout << "      e:";
+    // e.Print();
     switch (stage)
     {
     case 0:
@@ -184,7 +184,7 @@ void ConstraintGraph::BuildCopy(NodeVec &nodes, SymbolTable &symtab, SymbolTable
 
 void ConstraintGraph::BuildGraph(const SsaGraph &ssaGraph, SymbolTable &symtab)
 {
-    cout << "Begin to build constraint graph" << endl;
+    // cout << "Begin to build constraint graph" << endl;
     vector<Variable*> nodes;
     map<Variable*, string> varTab;
     for (auto &var: symtab)
@@ -196,7 +196,7 @@ void ConstraintGraph::BuildGraph(const SsaGraph &ssaGraph, SymbolTable &symtab)
     {
         if (stm->type > CAL) 
             continue;
-        stm->Print();
+        // stm->Print();
         Variable *var = NULL;
         for (auto op: stm->operand)
         {
@@ -236,7 +236,7 @@ void ConstraintGraph::BuildGraph(const SsaGraph &ssaGraph, SymbolTable &symtab)
         else if (stm->type == CAL) // inline
         {
             vector<Variable*> params = func[stm->operand[1].var]->BuildCopy(nodes, symtab);
-            cout << "copy ok" << endl;
+            // cout << "copy ok" << endl;
             var->cst.type = ASN;
             var->cst.var.push_back(params.back());
             params.back()->outEdge.push_back(var);
@@ -259,7 +259,7 @@ void ConstraintGraph::BuildGraph(const SsaGraph &ssaGraph, SymbolTable &symtab)
     }
     for (auto var: symtab)
         varTab[var.second.node] = var.first;
-    cout << "Build constraint graph complete" << endl;
+    // cout << "Build constraint graph complete" << endl;
 
     // Calculate SCC
     int Timer = 0;
@@ -268,22 +268,22 @@ void ConstraintGraph::BuildGraph(const SsaGraph &ssaGraph, SymbolTable &symtab)
         if (node->state == 0)
             Tarjan(node, Timer, stk);
     // int totalSize = nodes.size();
-    for (auto scc: SCC)
-    {
-        // totalSize -= scc.size();
-        cout << "SCC " << scc[0]->sccId << " has :" << endl;
-        for (auto node: scc)
-            cout << "  " << varTab[node] << endl;
-    }
+    // for (auto scc: SCC)
+    // {
+    //     // totalSize -= scc.size();
+    //     cout << "SCC " << scc[0]->sccId << " has :" << endl;
+    //     for (auto node: scc)
+    //         cout << "  " << varTab[node] << endl;
+    // }
     // cout << "totalSize: " << totalSize << endl;
     // Topological Sort
     vector<int> degree(SCC.size(), 0);
-    for (auto node: nodes)
-    {
-        cout << varTab[node] << " sccId = " << node->sccId << ", controls: " << endl;
-        for (auto v: node->outEdge)
-            cout << "  " << varTab[v] << endl;
-    }
+    // for (auto node: nodes)
+    // {
+    //     cout << varTab[node] << " sccId = " << node->sccId << ", controls: " << endl;
+    //     for (auto v: node->outEdge)
+    //         cout << "  " << varTab[v] << endl;
+    // }
     for (auto node: nodes)
         for (auto v: node->outEdge)
             if (node->sccId != v->sccId)
@@ -321,28 +321,28 @@ void ConstraintGraph::BuildGraph(const SsaGraph &ssaGraph, SymbolTable &symtab)
     }
     // cout << endl;
     SCC = tempSCC;
-    for (auto scc: SCC)
-    {
-        cout << "SCC " << scc[0]->sccId << " has :" << endl;
-        for (auto node: scc)
-            cout << "  " << varTab[node] << endl;
-    }
-    cout << "Build SCC complete" << endl;
+    // for (auto scc: SCC)
+    // {
+    //     cout << "SCC " << scc[0]->sccId << " has :" << endl;
+    //     for (auto node: scc)
+    //         cout << "  " << varTab[node] << endl;
+    // }
+    // cout << "Build SCC complete" << endl;
 }
 
 void ConstraintGraph::Execute(std::map<Variable*, std::string> &varTab)
 {
-    cout << "Begin to Execute CG" << endl;
+    // cout << "Begin to Execute CG" << endl;
     for (auto scc: SCC)
     {
         int sccId = scc[0]->sccId;
-        cout << "Begin to Execute SSC " << sccId
-             << ", size " << scc.size() << endl;
+        // cout << "Begin to Execute SSC " << sccId
+        //      << ", size " << scc.size() << endl;
         for (auto node: scc)
             node->I = Interval();
         for (int stage = 0; stage < 3; stage++)
         {
-            cout << "  Stage " << stage << endl;
+            // cout << "  Stage " << stage << endl;
             queue<Variable*> que;
             for (auto node: scc)
             {
@@ -352,7 +352,7 @@ void ConstraintGraph::Execute(std::map<Variable*, std::string> &varTab)
             for (; !que.empty(); que.pop())
             {
                 Variable *u = que.front();
-                cout << "    now: " << varTab[u] << " ";
+                // cout << "    now: " << varTab[u] << " ";
                 if (u->Update(stage))
                     for (auto v: u->outEdge)
                         if (v->sccId == sccId && !v->visited)
@@ -361,8 +361,8 @@ void ConstraintGraph::Execute(std::map<Variable*, std::string> &varTab)
                             que.push(v);
                         }
                 u->visited = false;
-                cout << "        ";
-                u->I.Print();
+                // cout << "        ";
+                // u->I.Print();
             }
         }
     }

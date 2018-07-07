@@ -9,21 +9,21 @@ VariableRangeAnalyser::VariableRangeAnalyser(string code, string name)
 {
     funcName = name;
     SsaGraph ssaGraph(code, symtab, parameters);
-    cout << "symtab (before): " << endl;
-    for (auto i: symtab)
-        cout << i.second.type << " " << i.first << endl;
+    // cout << "symtab (before): " << endl;
+    // for (auto i: symtab)
+    //     cout << i.second.type << " " << i.first << endl;
     ssaGraph.Transform(symtab);
-    cout << "symtab (after): " << endl;
-    for (auto i: symtab)
-        cout << i.second.type << " " << i.first << endl;
+    // cout << "symtab (after): " << endl;
+    // for (auto i: symtab)
+    //     cout << i.second.type << " " << i.first << endl;
     constraintGraph.BuildGraph(ssaGraph, symtab);
 }
 
 NodeVec VariableRangeAnalyser::BuildCopy(NodeVec &nodes, SymbolTable &_symtab)
 {
-    cout << "start copy" << endl;
+    // cout << "start copy" << endl;
     constraintGraph.BuildCopy(nodes, symtab, _symtab, funcName);
-    cout << "build copy ok" << endl;
+    // cout << "build copy ok" << endl;
     NodeVec params;
     for (auto param: parameters)
         params.push_back(symtab[param].node->newNode);
@@ -59,6 +59,7 @@ void VariableRangeAnalyser::ExecuteWithStdio()
     for (auto var: symtab)
         varTab[var.second.node] = var.first;
     constraintGraph.Execute(varTab);
+    cout << "result:" << endl;
     cout << retName << " in ";
     symtab[retName].node->I.Print();
     parameters.push_back(retName);

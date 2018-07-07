@@ -11,9 +11,9 @@
 class Constraint
 {
 public:
-    enum StType type;
-    Interval *interval;
-    std::vector<Variable*> var;
+    enum StType type; // constraint type
+    Interval *interval; // for constant or constant interval
+    std::vector<Variable*> var; // the list of variables that this constraint will use
 
     Constraint();
     Constraint(const Constraint &cst);
@@ -24,12 +24,12 @@ public:
 class Variable
 {
 public:
-    std::vector<Variable*> outEdge;
-    Interval I;
-    bool visited;
-    int sccId;
-    Constraint cst;
+    std::vector<Variable*> outEdge; // the list of variables that can be affected by this variable
+    Constraint cst; // the constraint that affects this variable
+    Interval I; // the range of this variable
+    bool visited; // for the use of traverse
     // for SCC Calculation
+    int sccId;
     int state, dfn, low;
     // for Copy
     Variable *newNode;
@@ -44,7 +44,7 @@ typedef std::vector<Variable*> NodeVec;
 class ConstraintGraph
 {
 private:
-    std::vector< std::vector<Variable*> > SCC;
+    std::vector< std::vector<Variable*> > SCC; // Strong Connected Components
     void Tarjan(Variable *start, int &Timer, std::stack<Variable*> &stk);
 public:
     ConstraintGraph();
